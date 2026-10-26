@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>찬양콘티 자동배치 인쇄</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;color:#171717}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f3ec}
+.toolbar{position:sticky;top:0;z-index:20;background:#1e3a5f;color:#fff;border-bottom:3px solid #c9a227;padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 10px #1e3a5f33}
+.brand{font-family:"Noto Serif KR","Batang",serif;font-size:19px;font-weight:800;color:#f0b429;letter-spacing:.02em;margin-right:4px;white-space:nowrap}
+.toolbar button,.toolbar .filebtn{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:#fff}
+.toolbar button:hover,.toolbar .filebtn:hover{filter:brightness(1.15)}
+.toolbar button.primary{background:#f0b429;color:#1e3a5f;border-color:#f0b429;font-weight:800}
+.toolbar button.danger{color:#ffb4ab}
+.toolbar input[type=text],.toolbar input[type=date],.toolbar select{background:#fff;color:#1e3a5f}
+button,.filebtn{border:1px solid #d8d0b8;background:#fff;border-radius:9px;padding:9px 13px;font-size:14px;cursor:pointer}
+button.primary{background:#f0b429;color:#1e3a5f;border-color:#f0b429;font-weight:800}
+button.danger{color:#b00020}
+input[type=file]{display:none}
+input[type=text],input[type=date],select{border:1px solid #d8d0b8;border-radius:9px;padding:9px 10px;font-size:14px}
+#titleInput{flex:1 1 220px}
+.hint{font-size:13px;color:#d7dee8}
+#drop{max-width:1100px;margin:16px auto 10px;padding:18px 22px;border:2px dashed #c9a227;border-radius:14px;background:#fffdf6;color:#555;text-align:left;box-shadow:0 2px 10px #1e3a5f14}
+#drop.drag{border-color:#111;background:#fafafa}
+#drop.flash{border-color:#e6a800;background:#fffbe6;box-shadow:0 0 0 3px #f0b42955}
+.drop-title{font-family:"Noto Serif KR","Batang",serif;font-size:19px;font-weight:800;color:#1e3a5f;margin-bottom:8px}
+.drop-steps{font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px}
+.drop-note{font-size:14px;color:#555;margin-top:8px;line-height:1.6}
+.drop-formats{margin:10px 0;padding:12px 14px;background:#f6f1e3;border-radius:8px;font-size:14px;line-height:1.8;color:#333}
+.drop-formats .fname{font-weight:800;color:#1e3a5f}
+.drop-formats .frow{display:grid;grid-template-columns:5.5em 1fr;gap:10px;margin-top:2px}
+.drop-formats .frow .fname{white-space:nowrap}
+#status{max-width:1100px;margin:0 auto 10px;padding:0 4px;font-size:14px;color:#1e3a5f;font-weight:600}
+#cards{max-width:1100px;margin:0 auto 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.card{background:#fff;border:1px solid #e3dcc6;border-radius:12px;padding:8px;cursor:grab;box-shadow:0 1px 4px #1e3a5f14}.card.dragging{opacity:.45}.card.dragover{outline:3px solid #c9a227;outline-offset:2px}
+.thumb{height:150px;display:flex;align-items:center;justify-content:center;background:#f6f3ec;border-radius:7px;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:contain}
+.titleInp,.memoInp{width:100%;padding:7px 8px;border:1px solid #aaa;border-radius:6px;font-size:14px;margin-top:6px}
+.memoInp{font-size:13px;color:#444}
+.row{display:flex;align-items:center;gap:5px;margin-top:8px;flex-wrap:wrap}
+.row label{font-size:13px;white-space:nowrap}
+.row button{padding:7px 9px;font-size:13px}
+.order{width:58px;padding:6px;border:1px solid #aaa;border-radius:6px;font-size:16px;text-align:center}
+.name{font-size:11px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:6px}
+#preview{display:flex;flex-direction:column;align-items:center;gap:18px;padding-bottom:30px}
+.print-header{width:100%;max-width:1100px;text-align:center}
+.print-header .ptitle{font-family:"Noto Serif KR","Batang",serif;font-size:26px;font-weight:800;margin:2px 0;color:#1e3a5f}
+.print-header .pdate{font-size:16px;color:#555}
+.app-inquiry{background:#f0b429;color:#1e3a5f;text-align:center;font-size:13px;font-weight:600;padding:8px 12px}
+.app-inquiry a{color:#1e3a5f;text-decoration:none;font-weight:800}
+.sheet{width:297mm;height:210mm;background:#fff;box-shadow:0 4px 20px #1e3a5f22;padding:5mm;display:grid;gap:2mm;overflow:hidden}
+.sheet.portrait{width:210mm;height:297mm}
+.sheet.a3{width:420mm;height:297mm}
+.sheet.a3.portrait{width:297mm;height:420mm}
+.sheet.with-header{height:calc(210mm - 18mm)}
+.sheet.portrait.with-header{height:calc(297mm - 18mm)}
+.sheet.a3.with-header{height:calc(297mm - 18mm)}
+.sheet.a3.portrait.with-header{height:calc(420mm - 18mm)}
+.sheet.slots-3{grid-template-columns:repeat(3,1fr)}
+.sheet.slots-2{grid-template-columns:repeat(2,1fr)}
+.sheet.slots-1{grid-template-columns:1fr}
+.slot{min-width:0;min-height:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.slotimg{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.slotimg img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.slotTitle{flex:none;width:100%;text-align:center;padding:0 12mm 1mm;line-height:1.3}
+.slotTitle b{font-size:5.5mm}
+.slotTitle span{display:block;font-size:3.8mm;color:#555}
+.slot.has-num .slotTitle{padding-left:12mm}
+.num{position:absolute;left:1.5mm;top:1.5mm;z-index:2;width:10mm;height:10mm;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;border:.6mm solid #111;color:#111;font-weight:800;font-size:5mm;line-height:1}
+.pageLabel{position:absolute;right:2mm;bottom:1mm;font-size:3mm;color:#777}
+@page{size:A4 landscape;margin:5mm}
+@media print{
+ body{background:#fff}
+ .toolbar,#drop,#status,#cards,.app-inquiry{display:none!important}
+ #preview{display:block;padding:0}
+ .print-header{margin:0 0 2mm}
+ .print-header .ptitle{font-size:7mm}
+ .print-header .pdate{font-size:4.5mm}
+ .sheet{width:287mm;height:200mm;margin:0;padding:0;box-shadow:none;gap:2mm;page-break-after:always;break-after:page}
+ .sheet.portrait{width:200mm;height:287mm}
+ .sheet.a3{width:410mm;height:287mm}
+ .sheet.a3.portrait{width:287mm;height:410mm}
+ .sheet.with-header{height:calc(200mm - 18mm)}
+ .sheet.portrait.with-header{height:calc(287mm - 18mm)}
+ .sheet.a3.with-header{height:calc(287mm - 18mm)}
+ .sheet.a3.portrait.with-header{height:calc(410mm - 18mm)}
+ .sheet:last-child{page-break-after:auto;break-after:auto}
+ .pageLabel{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app-inquiry">앱 문의) shs목사 · <a href="mailto:ttd0732@hanmail.net">ttd0732@hanmail.net</a></div>
+<div class="toolbar">
+ <span class="brand">찬양콘티</span>
+ <label class="filebtn">사진 선택<input id="files" type="file" accept="image/*" multiple></label>
+ <button id="pasteBtn">붙여넣기</button>
+ <button id="undoBtn">마지막 붙여넣기 취소</button>
+ <button id="clearBtn" class="danger">전체 지우기</button>
+ <input id="dateInput" type="date" title="예배 날짜">
+ <input id="titleInput" type="text" placeholder="제목 (예: 주일예배 찬양 콘티)">
+ <select id="sizeSelect" title="용지 크기">
+   <option value="A4">A4</option>
+   <option value="A3">A3</option>
+ </select>
+ <select id="orientSelect" title="용지 방향">
+   <option value="landscape">가로</option>
+   <option value="portrait">세로</option>
+ </select>
+ <label><input id="numToggle" type="checkbox" checked> 번호 표시</label>
+ <label><input id="trimToggle" type="checkbox" checked> 흰 여백 자동 자르기</label>
+ <button id="saveFileBtn">콘티 파일로 저장</button>
+ <label class="filebtn">파일에서 불러오기<input id="loadFile" type="file" accept="application/json,.json"></label>
+ <button id="restoreBtn">자동 저장본 불러오기</button>
+ <button id="printBtn" class="primary">인쇄하기</button>
+ <span class="hint">A4/A3 · 가로/세로 · 여백 5mm · 악보 좌→우 · 작업 내용은 브라우저에 자동 저장됩니다</span>
+</div>
+
+<div id="drop">
+  <div class="drop-title">사용 방법</div>
+  <div class="drop-steps">① 이미지복사 Ctrl+C → ② 이 화면에서 Ctrl+V → ③ 다음 곡도 반복</div>
+  <div class="drop-note">붙여넣는 순서대로 자동 번호가 붙습니다. 사진 파일을 끌어놓거나 ‘사진 선택’으로 넣을 수도 있습니다.</div>
+  <div class="drop-formats">
+    <div><span class="fname">배치 형식</span></div>
+    <div class="frow"><span class="fname">A4 가로</span><span>4곡 2+2 · 5곡 3+2 · 6곡 3+3 · 8곡 3+3+2(3면) · 10곡 3+3+2+2(4면)</span></div>
+    <div class="frow"><span class="fname">A4 세로</span><span>면 나눔은 가로와 같음. 한 줄에 2곡까지라 3곡이 있는 면은 위 2곡, 아래 1곡으로 2줄이 됩니다.</span></div>
+    <div class="frow"><span class="fname">A3 가로</span><span>4곡 4(1면) · 8곡 4+4(2면) · 10곡 4+3+3(3면)</span></div>
+    <div class="frow"><span class="fname">A3 세로</span><span>면 나눔은 가로와 같음. 한 줄에 3곡까지라 4곡이 있는 면은 위 3곡, 아래 1곡으로 2줄이 됩니다.</span></div>
+  </div>
+  <div class="drop-note">카드에서 곡 제목·메모를 입력하고, ↻ 버튼으로 사진을 돌릴 수 있습니다. 흰 여백은 자동으로 잘라서 모든 악보를 같은 높이로 맞춥니다.</div>
+</div>
+<div id="status">사진 0장</div>
+<section id="cards"></section>
+<main id="preview"></main>
+
+<script>
+const images=[];
+let serial=0;
+const cards=document.getElementById('cards');
+const preview=document.getElementById('preview');
+const statusEl=document.getElementById('status');
+const drop=document.getElementById('drop');
+const dateInput=document.getElementById('dateInput');
+const titleInput=document.getElementById('titleInput');
+const orientSelect=document.getElementById('orientSelect');
+const sizeSelect=document.getElementById('sizeSelect');
+const numToggle=document.getElementById('numToggle');
+const trimToggle=document.getElementById('trimToggle');
+let lastPasteIds=[];
+let saveTimer=null;
+let quotaWarned=false;
+const STORE_KEY='chanYangContiV2';
+let pageStyleEl=document.createElement('style');
+document.head.appendChild(pageStyleEl);
+function applyPageStyle(){
+  const orient=orientSelect.value==='portrait'?'portrait':'landscape';
+  pageStyleEl.textContent='@page{size:'+sizeSelect.value+' '+orient+';margin:5mm}';
+}
+applyPageStyle();
+dateInput.valueAsDate=new Date();
+
+function defaultTitle(name){
+  if(!name) return '';
+  if(name.startsWith('붙여넣기')) return '';
+  return name.replace(/\.[^.]+$/,'');
+}
+function trimImage(src,cb){
+  const img=new Image();
+  img.onload=()=>{
+    const scale=Math.min(1,800/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*scale));
+    const h=Math.max(1,Math.round(img.naturalHeight*scale));
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    const cx=cv.getContext('2d'); cx.drawImage(img,0,0,w,h);
+    let data;
+    try{ data=cx.getImageData(0,0,w,h).data; }catch(e){ cb(src,img.naturalWidth/img.naturalHeight); return; }
+    let minX=w,minY=h,maxX=-1,maxY=-1;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i=(y*w+x)*4;
+        if(data[i]<245||data[i+1]<245||data[i+2]<245){
+          if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+        }
+      }
+    }
+    if(maxX<0 || (maxX-minX+1)*(maxY-minY+1) > 0.95*w*h){ cb(src,img.naturalWidth/img.naturalHeight); return; }
+    const pad=Math.round(Math.max(w,h)*0.015)+2;
+    minX=Math.max(0,minX-pad); minY=Math.max(0,minY-pad);
+    maxX=Math.min(w-1,maxX+pad); maxY=Math.min(h-1,maxY+pad);
+    const sx=minX/scale, sy=minY/scale, sw=(maxX-minX+1)/scale, sh=(maxY-minY+1)/scale;
+    const cv2=document.createElement('canvas');
+    cv2.width=Math.round(sw); cv2.height=Math.round(sh);
+    const cx2=cv2.getContext('2d');
+    cx2.fillStyle='#fff'; cx2.fillRect(0,0,cv2.width,cv2.height);
+    cx2.drawImage(img,sx,sy,sw,sh,0,0,cv2.width,cv2.height);
+    cb(cv2.toDataURL('image/jpeg',0.92), cv2.width/cv2.height);
+  };
+  img.src=src;
+}
+function processImage(dataUrl,done){
+  const img=new Image();
+  img.onload=()=>{
+    let src=dataUrl;
+    if(Math.max(img.naturalWidth,img.naturalHeight)>1800){
+      const scale=1800/Math.max(img.naturalWidth,img.naturalHeight);
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(img.naturalWidth*scale);
+      cv.height=Math.round(img.naturalHeight*scale);
+      const cx=cv.getContext('2d');
+      cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+      cx.drawImage(img,0,0,cv.width,cv.height);
+      src=cv.toDataURL('image/jpeg',0.92);
+    }
+    if(trimToggle.checked){
+      trimImage(src,(tSrc,tAspect)=>done({src:tSrc,aspect:tAspect,portrait:tAspect<1}));
+    }else{
+      done({src:src,aspect:img.naturalWidth/img.naturalHeight,portrait:img.naturalHeight>img.naturalWidth});
+    }
+  };
+  img.src=dataUrl;
+}
+function readFile(file,batch){
+  if(!file || !file.type.startsWith('image/')) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    processImage(r.result,(res)=>{
+      const item={id:++serial,src:res.src,name:file.name||'이미지',title:defaultTitle(file.name),memo:'',order:images.length+1,portrait:res.portrait,aspect:res.aspect};
+      images.push(item);
+      if(batch){
+        batch.ids.push(item.id);
+        if(batch.ids.length>=batch.expected){
+          lastPasteIds=batch.ids.slice();
+          statusEl.textContent='붙여넣기 완료 · 총 '+images.length+'곡 · 다음 곡을 복사해서 Ctrl+V 하세요.';
+        }
+      }
+      render(); saveSoon();
+      if(batch && batch.ids.length>=batch.expected){
+        statusEl.textContent='붙여넣기 완료 · 총 '+images.length+'곡 · 다음 곡을 복사해서 Ctrl+V 하세요.';
+      }
+    });
+  };
+  r.readAsDataURL(file);
+}
+function addFiles(files){[...files].forEach(f=>readFile(f,null))}
+function ordered(){return [...images].sort((a,b)=>(a.order-b.order)||(a.id-b.id))}
+function normalizeOrders(){
+  ordered().forEach((x,i)=>x.order=i+1);
+  render(); saveSoon();
+}
+function maxCols(){
+  return sizeSelect.value==='A3'?4:3;
+}
+function pageGroups(n){
+  if(n<=0)return[];
+  const max=maxCols();
+  if(n<=max)return[n];
+  const pages=Math.ceil(n/max);
+  const base=Math.floor(n/pages);
+  const rem=n-base*pages;
+  const g=[];
+  for(let i=0;i<pages;i++) g.push(base+(i<rem?1:0));
+  return g;
+}
+function moveItem(x,dir){
+  const arr=ordered();
+  const i=arr.findIndex(z=>z.id===x.id);
+  const j=i+dir;
+  if(i<0||j<0||j>=arr.length) return;
+  const t=arr[i].order; arr[i].order=arr[j].order; arr[j].order=t;
+  normalizeOrders();
+}
+function rotateImage(x){
+  const img=new Image();
+  img.onload=()=>{
+    const cv=document.createElement('canvas');
+    cv.width=img.naturalHeight; cv.height=img.naturalWidth;
+    const cx=cv.getContext('2d');
+    cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+    cx.translate(cv.width/2,cv.height/2);
+    cx.rotate(Math.PI/2);
+    cx.drawImage(img,-img.naturalWidth/2,-img.naturalHeight/2);
+    x.src=cv.toDataURL('image/jpeg',0.92);
+    x.portrait=!x.portrait;
+    x.aspect=img.naturalHeight/img.naturalWidth;
+    render(); saveSoon();
+  };
+  img.src=x.src;
+}
+function renderCards(){
+  cards.innerHTML='';
+  for(const x of ordered()){
+    const c=document.createElement('article'); c.className='card'; c.draggable=true; c.dataset.id=x.id;
+    c.title='마우스로 끌어서 순서를 바꿀 수 있습니다';
+    c.addEventListener('dragstart',e=>{c.classList.add('dragging');e.dataTransfer.setData('text/plain',String(x.id));e.dataTransfer.effectAllowed='move'});
+    c.addEventListener('dragend',()=>{c.classList.remove('dragging');document.querySelectorAll('.card').forEach(z=>z.classList.remove('dragover'))});
+    c.addEventListener('dragover',e=>{e.preventDefault();c.classList.add('dragover');e.dataTransfer.dropEffect='move'});
+    c.addEventListener('dragleave',()=>c.classList.remove('dragover'));
+    c.addEventListener('drop',e=>{
+      e.preventDefault();c.classList.remove('dragover');
+      const fromId=parseInt(e.dataTransfer.getData('text/plain'),10);
+      if(!fromId || fromId===x.id)return;
+      const arranged=ordered();
+      const from=arranged.findIndex(z=>z.id===fromId), to=arranged.findIndex(z=>z.id===x.id);
+      if(from<0||to<0)return;
+      const [moved]=arranged.splice(from,1); arranged.splice(to,0,moved);
+      arranged.forEach((z,i)=>z.order=i+1);
+      render();
+    });
+    const t=document.createElement('div'); t.className='thumb';
+    const im=document.createElement('img'); im.src=x.src; im.alt=x.name; im.draggable=false; t.appendChild(im);
+    const titleInp=document.createElement('input'); titleInp.className='titleInp'; titleInp.type='text'; titleInp.placeholder='곡 제목 (예: 은혜)'; titleInp.value=x.title||'';
+    titleInp.addEventListener('input',()=>{x.title=titleInp.value; renderPreview(); saveSoon();});
+    const memoInp=document.createElement('input'); memoInp.className='memoInp'; memoInp.type='text'; memoInp.placeholder='메모 (조·템포·인도자)'; memoInp.value=x.memo||'';
+    memoInp.addEventListener('input',()=>{x.memo=memoInp.value; renderPreview(); saveSoon();});
+    const row=document.createElement('div'); row.className='row';
+    const lab=document.createElement('label'); lab.textContent='순번';
+    const inp=document.createElement('input'); inp.className='order'; inp.type='number'; inp.min='1'; inp.max='99'; inp.value=x.order;
+    inp.addEventListener('change',()=>{
+      const v=parseInt(inp.value,10);
+      x.order=Number.isFinite(v)&&v>0?v:99;
+      normalizeOrders();
+    });
+    const up=document.createElement('button'); up.type='button'; up.textContent='▲';
+    up.addEventListener('click',()=>moveItem(x,-1));
+    const down=document.createElement('button'); down.type='button'; down.textContent='▼';
+    down.addEventListener('click',()=>moveItem(x,1));
+    const rot=document.createElement('button'); rot.type='button'; rot.textContent='↻ 90°';
+    rot.addEventListener('click',()=>rotateImage(x));
+    const del=document.createElement('button'); del.type='button'; del.textContent='삭제';
+    del.addEventListener('click',()=>{
+      const i=images.findIndex(y=>y.id===x.id); if(i>=0)images.splice(i,1);
+      normalizeOrders(); saveSoon();
+    });
+    row.append(lab,inp,up,down,rot,del);
+    const nm=document.createElement('div'); nm.className='name'; nm.textContent=x.name+(x.portrait?' · 세로':'');
+    c.append(t,titleInp,memoInp,row,nm); cards.appendChild(c);
+  }
+}
+function formatDate(str){
+  if(!str) return '';
+  const parts=str.split('-');
+  if(parts.length!==3) return str;
+  return parts[0]+'년 '+parseInt(parts[1],10)+'월 '+parseInt(parts[2],10)+'일';
+}
+function renderPreview(){
+  preview.innerHTML='';
+  const arr=ordered();
+  const groups=pageGroups(arr.length);
+  const showNum=numToggle.checked;
+  const portrait=orientSelect.value==='portrait';
+  const a3=sizeSelect.value==='A3';
+  const headTitle=titleInput.value.trim();
+  const headDate=formatDate(dateInput.value);
+  statusEl.textContent=(headTitle?headTitle+' · ':'')+'사진 '+arr.length+'장 · '+groups.length+'면 · 현재 순서: '+(arr.map(x=>x.title||('곡'+x.order)).join(' → ')||'-');
+  let idx=0,pageNo=1;
+  let firstSheet=true;
+  if(headTitle||headDate){
+    const h=document.createElement('div'); h.className='print-header';
+    if(headTitle){const t=document.createElement('div'); t.className='ptitle'; t.textContent=headTitle; h.appendChild(t);}
+    if(headDate){const d=document.createElement('div'); d.className='pdate'; d.textContent=headDate; h.appendChild(d);}
+    preview.appendChild(h);
+  }
+  for(const count of groups){
+    const cols=portrait?Math.min(count,a3?3:2):count;
+    const rows=Math.ceil(count/cols);
+    const dims=a3?(portrait?[287,410]:[410,287]):(portrait?[200,287]:[287,200]);
+    const slotAspect=(dims[0]/cols)/(dims[1]/rows);
+    const page=document.createElement('section');
+    page.className='sheet slots-'+cols+(portrait?' portrait':'')+(a3?' a3':'')+((firstSheet && (headTitle||headDate))?' with-header':'');
+    page.style.position='relative';
+    for(let i=0;i<count;i++){
+      const x=arr[idx++];
+      const slot=document.createElement('div'); slot.className='slot'+(showNum?' has-num':'');
+      if(x.title||x.memo){
+        const tb=document.createElement('div'); tb.className='slotTitle';
+        if(x.title){const b=document.createElement('b'); b.textContent=x.title; tb.appendChild(b);}
+        if(x.memo){const s=document.createElement('span'); s.textContent=x.memo; tb.appendChild(s);}
+        slot.appendChild(tb);
+      }
+      const wrap=document.createElement('div'); wrap.className='slotimg';
+      const img=document.createElement('img'); img.src=x.src; img.alt=x.name;
+      if(x.aspect && x.aspect<=slotAspect){ img.style.height='100%'; img.style.width='auto'; }
+      else if(x.aspect){ img.style.width='100%'; img.style.height='auto'; }
+      wrap.appendChild(img); slot.appendChild(wrap);
+      if(showNum){
+        const num=document.createElement('span'); num.className='num'; num.textContent=x.order;
+        slot.appendChild(num);
+      }
+      page.appendChild(slot);
+    }
+    const sheetNo=Math.ceil(pageNo/2);
+    const side=pageNo%2===1?'앞면':'뒷면';
+    const pl=document.createElement('span'); pl.className='pageLabel';
+    pl.textContent=sheetNo===1?side:(sheetNo+'번째 용지 '+side);
+    page.appendChild(pl); preview.appendChild(page);
+    pageNo++; firstSheet=false;
+  }
+}
+function render(){renderCards();renderPreview()}
+function getState(){
+  return {version:2,date:dateInput.value,title:titleInput.value,orientation:orientSelect.value,size:sizeSelect.value,showNumbers:numToggle.checked,trim:trimToggle.checked,
+    songs:images.map(x=>({title:x.title,memo:x.memo,order:x.order,src:x.src,name:x.name,portrait:x.portrait,aspect:x.aspect}))};
+}
+function saveNow(){
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(getState()));}
+  catch(e){
+    if(!quotaWarned){quotaWarned=true; statusEl.textContent='저장 공간이 부족해 자동 저장이 안 됩니다. 콘티 파일로 저장해 주세요.';}
+  }
+}
+function saveSoon(){clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,400);}
+function applyState(s){
+  if(!s || !Array.isArray(s.songs)) return false;
+  images.length=0; serial=0;
+  s.songs.forEach(song=>{
+    images.push({id:++serial,src:song.src||'',name:song.name||'이미지',title:song.title||'',memo:song.memo||'',order:song.order||images.length+1,portrait:!!song.portrait,aspect:song.aspect});
+  });
+  if(s.date) dateInput.value=s.date;
+  if(typeof s.title==='string') titleInput.value=s.title;
+  if(s.orientation) orientSelect.value=s.orientation;
+  if(s.size) sizeSelect.value=s.size;
+  numToggle.checked=true;
+  trimToggle.checked=true;
+  applyPageStyle();
+  normalizeOrders(); saveSoon();
+  return true;
+}
+function download(filename,text){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+document.addEventListener('paste',e=>{
+  const items=[...(e.clipboardData?.items||[])].filter(it=>it.type && it.type.startsWith('image/'));
+  if(!items.length) return;
+  e.preventDefault();
+  const batch={ids:[],expected:0};
+  items.forEach((it,i)=>{
+    const b=it.getAsFile();
+    if(!b) return;
+    batch.expected++;
+    readFile(new File([b],'붙여넣기_'+(images.length+i+1)+'.png',{type:b.type}),batch);
+  });
+});
+document.getElementById('pasteBtn').addEventListener('click',async ()=>{
+  let pasted=false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.read){
+      const items=await navigator.clipboard.read();
+      const batch={ids:[],expected:0};
+      for(const item of items){
+        for(const type of item.types){
+          if(type.startsWith('image/')){
+            const b=await item.getType(type);
+            batch.expected++;
+            readFile(new File([b],'붙여넣기_'+(images.length+batch.expected)+'.png',{type:b.type}),batch);
+            pasted=true;
+          }
+        }
+      }
+    }
+  }catch(e){ pasted=false; }
+  if(!pasted){
+    drop.scrollIntoView({behavior:'smooth',block:'center'});
+    drop.classList.add('flash');
+    setTimeout(()=>drop.classList.remove('flash'),2000);
+    statusEl.textContent='이미지를 복사(Ctrl+C)한 다음, 이 화면에서 Ctrl+V를 누르세요. 인터넷 이미지에서는 마우스 오른쪽 버튼 → 이미지 복사를 눌러도 됩니다.';
+  }
+});
+document.getElementById('undoBtn').addEventListener('click',()=>{
+  if(!lastPasteIds.length){alert('취소할 마지막 붙여넣기가 없습니다.');return}
+  for(let i=images.length-1;i>=0;i--){if(lastPasteIds.includes(images[i].id))images.splice(i,1)}
+  lastPasteIds=[]; normalizeOrders(); saveSoon();
+});
+document.getElementById('files').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(!images.length) return;
+  if(!confirm('사진을 모두 지울까요? 저장하지 않은 콘티는 사라집니다.')) return;
+  images.length=0; lastPasteIds=[]; render(); saveSoon();
+});
+document.getElementById('saveFileBtn').addEventListener('click',()=>{
+  if(!images.length){alert('먼저 사진을 넣어 주세요.');return}
+  const d=new Date();
+  const stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const filename='찬양콘티_'+stamp+'.json';
+  download(filename,JSON.stringify(getState()));
+  statusEl.textContent='콘티 파일 저장 시작 — 다운로드 폴더에서 '+filename+'을(를) 확인하세요. 저장 창이 안 뜨면 브라우저 다운로드 폴더를 확인하세요.';
+});
+document.getElementById('loadFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; e.target.value='';
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(applyState(s)){alert('콘티를 불러왔습니다. 사진 '+images.length+'장');}
+      else alert('올바른 콘티 파일이 아닙니다.');
+    }catch(err){alert('파일을 읽을 수 없습니다.');}
+  };
+  r.readAsText(f);
+});
+document.getElementById('restoreBtn').addEventListener('click',()=>{
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw){alert('자동 저장본이 없습니다.');return}
+    if(applyState(JSON.parse(raw))){alert('자동 저장본을 불러왔습니다. 사진 '+images.length+'장');}
+    else alert('자동 저장본을 읽을 수 없습니다.');
+  }catch(err){alert('자동 저장본을 읽을 수 없습니다.');}
+});
+orientSelect.addEventListener('change',()=>{applyPageStyle(); renderPreview(); saveSoon();});
+sizeSelect.addEventListener('change',()=>{applyPageStyle(); renderPreview(); saveSoon();});
+numToggle.addEventListener('change',()=>{renderPreview(); saveSoon();});
+trimToggle.addEventListener('change',()=>{saveSoon();});
+titleInput.addEventListener('input',()=>{renderPreview(); saveSoon();});
+dateInput.addEventListener('change',()=>{renderPreview(); saveSoon();});
+document.getElementById('printBtn').addEventListener('click',()=>{
+  if(!images.length){statusEl.textContent='먼저 사진을 넣어 주세요. 사진을 붙여넣은 뒤 인쇄하세요.';alert('먼저 사진을 넣어 주세요.');return}
+  const paper=sizeSelect.value+(orientSelect.value==='portrait'?' 세로':' 가로');
+  statusEl.textContent='인쇄 창에서 '+paper+'를 선택하세요. 양면은 "양면 인쇄 / 짧은쪽으로 넘김", 단면은 "단면"을 고르세요.';
+  alert('인쇄 창에서 '+paper+'를 선택하세요. 양면으로 하려면 "양면 인쇄 / 짧은쪽으로 넘김", 단면으로 하려면 "단면"을 고르세요. 배율은 100% 또는 실제 크기를 권장합니다.');
+  window.print();
+});
+render();
+try{
+  if(localStorage.getItem(STORE_KEY) && !images.length){
+    statusEl.textContent+=' · 자동 저장본이 있습니다. ‘자동 저장본 불러오기’를 누르세요.';
+  }
+}catch(e){}
+</script>
+</body>
+</html>
