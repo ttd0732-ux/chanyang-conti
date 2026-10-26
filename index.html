@@ -80,17 +80,17 @@ input[type=text],input[type=date],select{border:1px solid #d8d0b8;border-radius:
  body{background:#fff}
  .toolbar,#drop,#status,#cards,.app-inquiry{display:none!important}
  #preview{display:block;padding:0}
- .print-header{margin:0 0 2mm}
- .print-header .ptitle{font-size:7mm}
- .print-header .pdate{font-size:4.5mm}
+ .print-header{margin:0 0 2mm;break-inside:avoid;break-after:avoid}
+ .print-header .ptitle{font-size:7mm;line-height:1.2}
+ .print-header .pdate{font-size:4.5mm;line-height:1.2}
  .sheet{width:287mm;height:200mm;margin:0;padding:0;box-shadow:none;gap:2mm;page-break-after:always;break-after:page}
  .sheet.portrait{width:200mm;height:287mm}
  .sheet.a3{width:410mm;height:287mm}
  .sheet.a3.portrait{width:287mm;height:410mm}
- .sheet.with-header{height:calc(200mm - 18mm)}
- .sheet.portrait.with-header{height:calc(287mm - 18mm)}
- .sheet.a3.with-header{height:calc(287mm - 18mm)}
- .sheet.a3.portrait.with-header{height:calc(410mm - 18mm)}
+ .sheet.with-header{height:calc(200mm - 20mm)}
+ .sheet.portrait.with-header{height:calc(287mm - 20mm)}
+ .sheet.a3.with-header{height:calc(287mm - 20mm)}
+ .sheet.a3.portrait.with-header{height:calc(410mm - 20mm)}
  .sheet:last-child{page-break-after:auto;break-after:auto}
  .pageLabel{display:none}
 }
