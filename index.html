@@ -124,6 +124,7 @@ input[type=text],input[type=date],select{border:1px solid #d8d0b8;border-radius:
  <label class="filebtn">파일에서 불러오기<input id="loadFile" type="file" accept="application/json,.json"></label>
  <button id="restoreBtn">자동 저장본 불러오기</button>
  <button id="printBtn" class="primary">인쇄하기</button>
+ <button id="pdfBtn">PDF로 저장</button>
  <span class="hint">A4/A3 · 가로/세로 · 여백 5mm · 악보 좌→우 · 작업 내용은 브라우저에 자동 저장됩니다</span>
 </div>
 
@@ -545,6 +546,13 @@ document.getElementById('printBtn').addEventListener('click',()=>{
   const paper=sizeSelect.value+(orientSelect.value==='portrait'?' 세로':' 가로');
   statusEl.textContent='인쇄 창에서 '+paper+'를 선택하세요. 양면은 "양면 인쇄 / 짧은쪽으로 넘김", 단면은 "단면"을 고르세요.';
   alert('인쇄 창에서 '+paper+'를 선택하세요. 양면으로 하려면 "양면 인쇄 / 짧은쪽으로 넘김", 단면으로 하려면 "단면"을 고르세요. 배율은 100% 또는 실제 크기를 권장합니다.');
+  window.print();
+});
+document.getElementById('pdfBtn').addEventListener('click',()=>{
+  if(!images.length){statusEl.textContent='먼저 사진을 넣어 주세요. 사진을 붙여넣은 뒤 PDF로 저장하세요.';alert('먼저 사진을 넣어 주세요.');return}
+  const paper=sizeSelect.value+(orientSelect.value==='portrait'?' 세로':' 가로');
+  statusEl.textContent='인쇄 창에서 대상을 "PDF로 저장"으로 고르세요. 용지는 '+paper+'로 맞추고 저장하세요.';
+  alert('인쇄 창에서 대상을 "PDF로 저장"으로 고르세요. 용지는 '+paper+'로 맞추고, 배율은 100% 또는 실제 크기를 권장합니다.');
   window.print();
 });
 render();
