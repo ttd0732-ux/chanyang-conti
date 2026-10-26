@@ -155,6 +155,7 @@ const numToggle=document.getElementById('numToggle');
 const trimToggle=document.getElementById('trimToggle');
 let lastPasteIds=[];
 let saveTimer=null;
+let hadImages=false;
 let quotaWarned=false;
 const STORE_KEY='chanYangContiV2';
 let pageStyleEl=document.createElement('style');
@@ -409,8 +410,10 @@ function getState(){
     songs:images.map(x=>({title:x.title,memo:x.memo,order:x.order,src:x.src,name:x.name,portrait:x.portrait,aspect:x.aspect}))};
 }
 function saveNow(){
-  try{localStorage.setItem(STORE_KEY,JSON.stringify(getState()));}
-  catch(e){
+  try{
+    if(images.length>0){hadImages=true;localStorage.setItem(STORE_KEY,JSON.stringify(getState()));}
+    else if(hadImages){localStorage.removeItem(STORE_KEY);}
+  }catch(e){
     if(!quotaWarned){quotaWarned=true; statusEl.textContent='저장 공간이 부족해 자동 저장이 안 됩니다. 콘티 파일로 저장해 주세요.';}
   }
 }
@@ -428,6 +431,7 @@ function applyState(s){
   numToggle.checked=true;
   trimToggle.checked=true;
   applyPageStyle();
+  if(images.length>0) hadImages=true;
   normalizeOrders(); saveSoon();
   return true;
 }
@@ -490,7 +494,7 @@ drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
 document.getElementById('clearBtn').addEventListener('click',()=>{
   if(!images.length) return;
   if(!confirm('사진을 모두 지울까요? 저장하지 않은 콘티는 사라집니다.')) return;
-  images.length=0; lastPasteIds=[]; render(); saveSoon();
+  images.length=0; lastPasteIds=[]; hadImages=true; render(); saveSoon();
 });
 document.getElementById('saveFileBtn').addEventListener('click',()=>{
   if(!images.length){alert('먼저 사진을 넣어 주세요.');return}
@@ -517,7 +521,7 @@ document.getElementById('restoreBtn').addEventListener('click',()=>{
   try{
     const raw=localStorage.getItem(STORE_KEY);
     if(!raw){alert('자동 저장본이 없습니다.');return}
-    if(applyState(JSON.parse(raw))){alert('자동 저장본을 불러왔습니다. 사진 '+images.length+'장');}
+    if(applyState(JSON.parse(raw))){if(images.length){alert('자동 저장본을 불러왔습니다. 사진 '+images.length+'장');}else{alert('저장된 콘티에 사진이 없습니다. 파일에서 불러오기로 여세요.');}}
     else alert('자동 저장본을 읽을 수 없습니다.');
   }catch(err){alert('자동 저장본을 읽을 수 없습니다.');}
 });
